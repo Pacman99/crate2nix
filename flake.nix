@@ -62,6 +62,7 @@
       ./nix/perSystem-tools/flake-module.nix
       ./crate2nix/flake-module.nix
       ./docs/flake-module.nix
+      ./public-flake-module.nix
     ];
 
     flake = { lib, ... }: {
