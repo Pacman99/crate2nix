@@ -42,6 +42,17 @@ rec {
     endian = if platform.parsed.cpu.significantByte.name == "littleEndian" then "little" else "big";
     pointer_width = toString platform.parsed.cpu.bits;
     debug_assertions = false;
+    has_atomic =
+      let
+        maxAtomic =
+          hasAtomicData.standardArchs.${platform.rust.platform.arch}
+          or hasAtomicData.nonStandardTargets.${platform.rust.rustcTarget}
+          or null;
+        possibleAtomics = [ 8 16 32 64 128 ];
+        atomics = (lib.filter (a: a <= maxAtomic) possibleAtomics);
+      in
+        if maxAtomic == null then []
+        else (lib.map toString atomics) ++ [ "ptr" ];
   };
 
   registryUrl =
@@ -789,6 +800,57 @@ rec {
       builtins.throw "strictDeprecation enabled, aborting: ${message}"
     else
       builtins.trace message value;
+
+  hasAtomicData = {
+    # Architectures that always have a specific max atomic size
+    standardArchs = builtins.fromJSON ''
+      {"aarch64":128,"aarch64_be":128,"amdgcn":64,"arm64_32":128
+      ,"arm64e":128,"arm64ec":128,"armeb":64,"armebv7r":64
+      ,"armv6":64,"armv6k":32,"armv7":64,"armv7a":64,"armv7k":64
+      ,"armv7r":64,"armv7s":64,"armv8r":64,"hexagon":32,"i386":64
+      ,"i586":64,"i686":64,"loongarch64":64,"mips":32,"mips64":64
+      ,"mips64el":64,"mipsisa32r6":32,"mipsisa32r6el":32,"mipsisa64r6":64
+      ,"mipsisa64r6el":64,"nvptx64":64,"powerpc":32,"powerpc64":64
+      ,"powerpc64le":64,"riscv32":32,"riscv32gc":32,"riscv32ima":32
+      ,"riscv32imac":32,"riscv32imafc":32,"riscv64":64,"riscv64gc":64
+      ,"riscv64imac":64,"s390x":128,"sparc":32,"sparc64":64
+      ,"sparcv9":64,"thumbv7a":64,"thumbv7em":32,"thumbv7m":32
+      ,"thumbv7neon":64,"thumbv8m.base":32,"thumbv8m.main":32
+      ,"wasm32":64,"wasm32v1":64,"wasm64":64,"x86_64h":128}
+    '';
+    # Targets with non-standard architectures
+    nonStandardTargets = builtins.fromJSON ''
+      {"arm-linux-androideabi":32,"arm-unknown-linux-gnueabi":64
+      ,"arm-unknown-linux-gnueabihf":64,"arm-unknown-linux-musleabi":64
+      ,"arm-unknown-linux-musleabihf":64,"armv4t-unknown-linux-gnueabi":32
+      ,"armv5te-unknown-linux-gnueabi":32,"armv5te-unknown-linux-musleabi":32
+      ,"armv5te-unknown-linux-uclibceabi":32,"mipsel-mti-none-elf":32
+      ,"mipsel-sony-psp":32,"mipsel-unknown-linux-gnu":32
+      ,"mipsel-unknown-linux-musl":32,"mipsel-unknown-linux-uclibc":32
+      ,"mipsel-unknown-netbsd":32,"mipsel-unknown-none":32
+      ,"riscv32im-risc0-zkvm-elf":64,"riscv32imc-esp-espidf":32
+      ,"riscv32imc-unknown-nuttx-elf":32,"thumbv6m-nuttx-eabi":32
+      ,"x86_64-apple-darwin":128,"x86_64-apple-ios":128,"x86_64-apple-ios-macabi":128
+      ,"x86_64-apple-tvos":128,"x86_64-apple-watchos-sim":128
+      ,"x86_64-fortanix-unknown-sgx":64,"x86_64-linux-android":64
+      ,"x86_64-pc-cygwin":64,"x86_64-pc-nto-qnx710":64,"x86_64-pc-nto-qnx710_iosock":64
+      ,"x86_64-pc-nto-qnx800":64,"x86_64-pc-solaris":64,"x86_64-pc-windows-gnu":128
+      ,"x86_64-pc-windows-gnullvm":128,"x86_64-pc-windows-msvc":128
+      ,"x86_64-unikraft-linux-musl":64,"x86_64-unknown-dragonfly":64
+      ,"x86_64-unknown-freebsd":64,"x86_64-unknown-fuchsia":64
+      ,"x86_64-unknown-haiku":64,"x86_64-unknown-hermit":64
+      ,"x86_64-unknown-hurd-gnu":64,"x86_64-unknown-illumos":64
+      ,"x86_64-unknown-l4re-uclibc":64,"x86_64-unknown-linux-gnu":64
+      ,"x86_64-unknown-linux-gnux32":64,"x86_64-unknown-linux-musl":64
+      ,"x86_64-unknown-linux-none":64,"x86_64-unknown-linux-ohos":64
+      ,"x86_64-unknown-netbsd":64,"x86_64-unknown-none":64
+      ,"x86_64-unknown-openbsd":64,"x86_64-unknown-redox":64
+      ,"x86_64-unknown-trusty":64,"x86_64-unknown-uefi":64
+      ,"x86_64-uwp-windows-gnu":128,"x86_64-uwp-windows-msvc":128
+      ,"x86_64-win7-windows-gnu":64,"x86_64-win7-windows-msvc":64
+      ,"x86_64-wrs-vxworks":64}
+    '';
+  };
 
   #
   # crate2nix/default.nix (excerpt end)

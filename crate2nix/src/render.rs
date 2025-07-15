@@ -214,6 +214,8 @@ fn cfg_to_nix_expr(cfg: &CfgExpr) -> String {
                     format!("(builtins.elem {} targetFeatures)", escaped_value)
                 } else if key == "target_family" {
                     format!("(builtins.elem {} target.{})", escaped_value, target(key))
+                } else if key == "target_has_atomic" {
+                    format!("(builtins.elem {} target.{})", escaped_value, target(key))
                 } else {
                     format!("({} == target.{} or null)", escaped_value, target(key))
                 });
